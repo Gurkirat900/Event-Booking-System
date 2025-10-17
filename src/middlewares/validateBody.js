@@ -62,7 +62,7 @@ export const validateBody = (schemaName) => {
     }
 
     const parseResult = schema.safeParse(req.body);
-    console.log(parseResult)
+    console.log("Zod validation=>",parseResult)
 
     if (parseResult.success==false) {
       const errorMessages = parseResult.error.errors
