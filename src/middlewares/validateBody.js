@@ -62,13 +62,11 @@ export const validateBody = (schemaName) => {
     }
 
     const parseResult = schema.safeParse(req.body);
-    console.log("Zod validation=>",parseResult)
-
+    
     if (parseResult.success==false) {
-      const errorMessages = parseResult.error.errors
-        .map((err) => `${err.path.join(".")}: ${err.message}`)
-        .join(", ");
-      return next(new ApiError(400, errorMessages));
+      console.log("Zod errors=>",parseResult.error);
+      throw new ApiError(400,"Invalid input")
+      
     }
 
     // attach validated data (optional)
