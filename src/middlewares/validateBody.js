@@ -62,8 +62,9 @@ export const validateBody = (schemaName) => {
     }
 
     const parseResult = schema.safeParse(req.body);
+    console.log(parseResult)
 
-    if (!parseResult.success) {
+    if (parseResult.success==false) {
       const errorMessages = parseResult.error.errors
         .map((err) => `${err.path.join(".")}: ${err.message}`)
         .join(", ");

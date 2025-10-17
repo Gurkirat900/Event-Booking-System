@@ -5,18 +5,8 @@ import cookieParser from "cookie-parser"
 import { dbconnect } from "./config/db.js"
 import { errorHandler } from "./middlewares/errorHandler.js"
 
-import { createRequire } from "module";
-import { fileURLToPath } from "url";
-import path from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url);
-
-const resolved = require.resolve("./routers/userRouter.js", { paths: [__dirname] });
-console.log(" Node is resolving userRouter.js from:", resolved);
-
-import * as userRoutes from './routers/userRouter.js';
+import  userRoutes from './routers/userRouter.js';
 
 
 
@@ -28,19 +18,16 @@ app.use(cors({
     credentials:true
 }))
 
-app.use(express.json({limit:"50kb"}))
+app.use(express.json())
 app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }));
 
 
 // routes
-console.log("userRoutes import content:",userRoutes);
+app.use("/api/v1/users",userRoutes);
 
-// console.log("before")
-// app.use("/api/v1/users",userRouter);
-// console.log("after")
 
-app.use(errorHandler);
+// app.use(errorHandler);
 
 
 const PORT=process.env.PORT || 5000

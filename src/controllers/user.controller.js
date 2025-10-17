@@ -18,13 +18,13 @@ const signupUser= asyncHandler(async(req,res)=>{
 
     const hashedpass= await bcrypt.hash(password,5);
 
-    const[result]= await db.query("insert into person(name,email,password,role) values(? ? ? ?)",
+    const[result]= await db.query("insert into person(name,email,password,role) values(?, ?, ?, ?)",
         [name,email,hashedpass,role]
     )
 
     console.log(result);
 
-    const[userRows]= await db.query("select * from person where id= ?",[result.insertID])
+    const[userRows]= await db.query("select * from person where id= ?",[result.insertId])
 
     console.log(userRows);
 
