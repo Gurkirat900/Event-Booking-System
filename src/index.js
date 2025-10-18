@@ -4,12 +4,8 @@ import 'dotenv/config'
 import cookieParser from "cookie-parser"
 import { dbconnect } from "./config/db.js"
 import { errorHandler } from "./middlewares/errorHandler.js"
-
-
 import  userRoutes from './routers/userRouter.js';
-
-
-
+import societyRoutes from "./routers/societyRouter.js"
 
 const app= express()
 
@@ -25,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // routes
 app.use("/api/v1/users",userRoutes);
-
+app.use("/api/v1/society",societyRoutes);
 
 // app.use(errorHandler);
 

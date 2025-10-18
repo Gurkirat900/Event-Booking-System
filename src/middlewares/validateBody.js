@@ -17,12 +17,12 @@ const schemas = {
   }),
 
   joinSociety: z.object({
-    societyCode: z.string().min(4, "Invalid join code"),
+    join_code: z.string().min(4, "Invalid join code"),
   }),
 
   createSociety: z.object({
     name: z.string().min(3).max(100),
-    joinCode: z.string().min(4).max(20),
+    join_code: z.string().min(4).max(20),
     description: z.string().max(500).optional(),
   }),
 
