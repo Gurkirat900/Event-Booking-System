@@ -104,5 +104,77 @@ const getUser= asyncHandler(async (req,res)=>{
     )
 })
 
+const changePassword= asyncHandler(async (req,res)=>{
+    const {oldpass,newpass}= req.body;
+    const pass_in_db= req.user?.password;   // auth middleware
 
-export {signupUser,loginUser,logoutUser,getUser}
+    const check= await bcrypt.compare(oldpass,pass_in_db)
+    if(!check){
+        throw new ApiError(401,"Incorrect password");
+    }
+
+    const hashNewPass= await bcrypt.hash(newpass,5)
+    const db= getDB();
+    const [result]= await db.query("update person set password= ? where id= ?",
+        [hashNewPass,req.user.id]
+    )
+
+    if(result.affectedRows==0){
+        throw new ApiError(500,"something went wrong password not updated")
+    }
+
+    res.status(200).json(
+        new ApiResponse(200,{},"Password updated succesfully")
+    )
+})
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, email } = req.body;
+
+  if (!name && !email) {
+    throw new ApiError(400, "Either name or email is needed to update");
+  }
+
+  const db = getDB();
+
+  // Build dynamic query based on provided fields
+  const fields = [];
+  const values = [];
+
+  if (name) {
+    fields.push("name = ?");
+    values.push(name);
+  }
+
+  if (email) {
+    fields.push("email = ?");
+    values.push(email);
+  }
+
+  // add user id for WHERE clause
+  values.push(req.user.id);
+
+  const query = `UPDATE person SET ${fields.join(", ")} WHERE id = ?`;
+
+  const [result] = await db.execute(query, values);
+
+  if (result.affectedRows === 0) {
+    throw new ApiError(500, "Profile not updated");
+  }
+
+  // fetch updated user from DB
+  const [userRows] = await db.query(
+    "SELECT id, name, email FROM person WHERE id = ?",
+    [req.user.id]
+  );
+
+  const updatedUser = userRows[0];
+
+  res.status(200).json(
+    new ApiResponse(200, { user: updatedUser }, "Profile updated successfully")
+  );
+});
+
+
+
+export {signupUser,loginUser,logoutUser,getUser,changePassword,updateProfile}

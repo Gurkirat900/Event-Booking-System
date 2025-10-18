@@ -47,7 +47,12 @@ const schemas = {
 
   updateProfile: z.object({
     name: z.string().min(3).max(50).optional(),
-    phone: z.string().optional(),
+    email: z.string().email().optional(),
+  }),
+
+  changePass: z.object({
+    oldpass: z.string().min(6, "Password must be at least 6 chars"),
+    newpass: z.string().min(6, "Password must be at least 6 chars"),
   }),
 };
 
