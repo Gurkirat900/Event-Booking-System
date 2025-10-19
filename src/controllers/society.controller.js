@@ -205,4 +205,103 @@ const getMembers= asyncHandler(async (req,res)=>{
     )
 })
 
-export {createSociety,joinSociety,assignPresident,assignLead,getMembers}
+
+const getSocities= asyncHandler(async (req,res)=>{
+    const db= getDB()
+    
+    // optional search
+    const search= req.query.q ? `%${req.query.q}%` : "%";  // ternary condition
+
+    // socities with president name+ head_count
+    const [societies]= await db.query(
+        `SELECT s.id, s.name, s.join_code, s.description, p.name AS president_name,
+         COUNT(sm.person_id) AS member_count
+         FROM society s
+         LEFT JOIN person p ON s.president_id = p.id
+         LEFT JOIN society_member sm ON sm.society_id = s.id
+         WHERE s.name LIKE ? OR s.description LIKE ?
+         GROUP BY s.id
+         ORDER BY s.name ASC`
+         ,[search,search]
+    )   
+
+    if(societies.length==0){
+        throw new ApiError(404,"No socities found")
+    }
+
+    res.status(200).json(
+        new ApiResponse(200,{societies},"Socities fetched succesfully")
+    )
+})
+
+
+const getSocietyInfo= asyncHandler(async (req,res)=>{
+    const db = getDB();
+  const societyId = req.params.id;
+
+  // Check if society exists
+  const [societyRows] = await db.query(
+    ` SELECT s.id, s.name, s.description, p.name AS president_name
+      FROM society s
+      LEFT JOIN person p ON s.president_id = p.id
+      WHERE s.id = ? `
+      ,[societyId]
+  );
+
+  if (societyRows.length === 0) {
+    throw new ApiError(404, "Society not found");
+  }
+
+  const society = societyRows[0];
+
+  // Fetch lead (if any)
+  const [leadRows] = await db.query(
+    `
+    SELECT p.id, p.name, p.email
+    FROM society_member sm
+    JOIN person p ON sm.person_id = p.id
+    WHERE sm.society_id = ? AND sm.role = 'lead'
+    `,
+    [societyId]
+  );
+
+  const lead = leadRows[0] || null;
+
+  //  Count members
+  const [countRows] = await db.query(
+    "SELECT COUNT(*) AS member_count FROM society_member WHERE society_id = ?",
+    [societyId]
+  );
+
+  const memberCount = countRows[0].member_count || 0;
+
+  //  Determine current user's role (if logged in)
+  let userRole = null;
+
+  if (req.user?.role !== "admin") {
+    const [roleRows] = await db.query(
+      "SELECT role FROM society_member WHERE society_id = ? AND person_id = ?",
+      [societyId, req.user.id]
+    );
+    if (roleRows.length > 0) {
+      userRole = roleRows[0].role;
+    }
+  } else if (req.user?.role === "admin") {
+    userRole = "admin";
+  }
+
+  // Return everything
+  res.status(200).json(
+    new ApiResponse(200, {
+      id: society.id,
+      name: society.name,
+      description: society.description,
+      president_name: society.president_name,
+      lead,
+      member_count: memberCount,
+      user_role: userRole
+    }, "Society details fetched successfully")
+  );
+})
+
+export {createSociety,joinSociety,assignPresident,assignLead,getMembers,getSocities,getSocietyInfo}
