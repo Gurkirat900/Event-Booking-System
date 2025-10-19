@@ -27,7 +27,7 @@ const schemas = {
   }),
 
   assignPresident: z.object({
-    societyId: z.number().int().positive(),
+    societyId: z.number().int().positive().optional(),
     userId: z.number().int().positive(),
   }),
 

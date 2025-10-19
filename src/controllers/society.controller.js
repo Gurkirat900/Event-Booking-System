@@ -67,4 +67,96 @@ const joinSociety= asyncHandler(async (req,res)=>{
 
 })
 
-export {createSociety,joinSociety}
+const assignPresident= asyncHandler(async (req,res)=>{
+    const {userId}= req.body
+    const societyId= req.params.id
+
+    const db= getDB()
+
+    // verify if user exist
+    const [rows]= await db.query("select id from person where id= ?",[userId])
+    if(rows.length==0){
+        throw new ApiError(404,"user not found")
+    }
+
+    const[result]= await db.query("update society set president_id= ? where id= ?",
+        [userId,societyId]
+    )
+
+    if(result.affectedRows==0){
+        throw new ApiError(500,"President was not assigned")
+    }
+
+    const[addMember]= await db.query("insert into society_member(society_id,person_id,role) values(?,?,'president') on duplicate key update role= 'president' ",
+        [societyId,userId]
+    )
+
+    if(addMember.affectedRows==0){
+        throw new ApiError(500,"president was not added to society as member")
+    }
+
+    const[Presidentrow]= await db.query(
+        `select p.id, p.name, p.email, sm.role
+        from society_member as sm
+        join person p on sm.person_id = p.id
+        where sm.society_id=? and sm.person_id=?`,
+        [societyId,userId]
+    )
+    const president= Presidentrow[0];
+
+    res.status(200).json(
+        new ApiResponse(200,{president},"President was assigned succesfully")
+    )
+
+})
+
+
+const assignLead= asyncHandler(async (req,res)=>{
+    const {userId}= req.body    // person to be assigned lead
+    const societyId= req.params.id
+
+    const db= getDB()
+
+    // verify if person assigning lead is president of this society
+    const[isPresident]= await db.query("select * from society where id= ? and president_id= ?",
+        [societyId,req.user.id]
+    )
+
+    if(isPresident.length==0){
+        throw new ApiError(403,"Only president can assign leads")
+    }
+
+    // verify if user is member of society
+    const [rows]= await db.query("select id from society_member where society_id= ? and person_id= ? ", [societyId,userId])
+
+    if(rows.length==0){
+        throw new ApiError(404,"user not member of this society")
+    }
+
+    // remove any existing lead
+    await db.query("update society_member set role='member' where society_id=? and role= 'lead' ",
+        [societyId]
+    )
+
+    const[updateMember]= await db.query("update society_member set role= 'lead' where society_id=? and person_id= ?", [societyId,userId])
+
+    if(updateMember.affectedRows==0){
+        throw new ApiError(500,"lead was not assigned")
+    }
+
+    const[leadrow]= await db.query(
+        `select p.id, p.name, p.email, sm.role
+        from society_member as sm
+        join person p on sm.person_id = p.id
+        where sm.society_id=? and sm.person_id=?`,
+        [societyId,userId]
+    )
+    const lead= leadrow[0];
+
+    res.status(200).json(
+        new ApiResponse(200,{lead},"Lead was assigned succesfully")
+    )
+
+})
+
+export {createSociety,joinSociety,assignPresident,assignLead}

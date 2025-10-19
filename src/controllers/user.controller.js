@@ -22,11 +22,7 @@ const signupUser= asyncHandler(async(req,res)=>{
         [name,email,hashedpass,role]
     )
 
-    console.log(result);
-
     const[userRows]= await db.query("select * from person where id= ?",[result.insertId])
-
-    console.log(userRows);
 
     const user= userRows[0];
     const token= generateToken(user);
