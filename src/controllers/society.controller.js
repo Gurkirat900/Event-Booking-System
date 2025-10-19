@@ -159,4 +159,50 @@ const assignLead= asyncHandler(async (req,res)=>{
 
 })
 
-export {createSociety,joinSociety,assignPresident,assignLead}
+
+const getMembers= asyncHandler(async (req,res)=>{
+    const societyid= req.params.id
+    const db= getDB()
+
+    const[socities]= await db.query("select * from society where id=? ",[societyid])
+    if(socities.length==0){
+        throw new ApiError(404,"Society not found")
+    }
+
+    // check if user is admin, or society member
+    let access=false;
+    if(req.user.role=="admin"){
+        access=true
+    }else{
+        const[memberCheck]= await db.query("select * from society_member where society_id=? and person_id=?",[societyid,req.user.id])
+
+        if(memberCheck.length>0){
+            access=true;
+        }
+    }
+
+    if(!access){
+        throw new ApiError(403,"Access denied. You are not member of this society")
+    }
+
+    const [members]= await db.query(            // fetch all members
+        `select p.id, p.name, p.email, sm.role, sm.joined_at
+        from society_member as sm
+        join person p on sm.person_id = p.id
+        where sm.society_id= ?
+        order by
+           case
+              when sm.role= 'president' then 1
+              when sm.role= 'lead' then 2
+              when sm.role= 'member' then 3
+              else 4
+            end`,
+            [societyid]
+    )
+
+    res.status(200).json(
+        new ApiResponse(200,{members},"Society members fetched succesfully")
+    )
+})
+
+export {createSociety,joinSociety,assignPresident,assignLead,getMembers}
