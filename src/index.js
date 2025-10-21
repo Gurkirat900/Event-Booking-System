@@ -6,7 +6,7 @@ import { dbconnect } from "./config/db.js"
 import { errorHandler } from "./middlewares/errorHandler.js"
 import  userRoutes from './routers/userRouter.js';
 import societyRoutes from "./routers/societyRouter.js";
-import eventRoutes from "./routers/eventRouter.js"
+import eventDraftRoutes from "./routers/eventDraftRouter.js"
 
 const app= express()
 
@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 // routes
 app.use("/api/v1/users",userRoutes);
 app.use("/api/v1/society",societyRoutes);
-app.use("/api/v1/events",eventRoutes);
+app.use("/api/v1/event-draft",eventDraftRoutes);
 
 // app.use(errorHandler);
 
