@@ -54,6 +54,16 @@ const schemas = {
     oldpass: z.string().min(6, "Password must be at least 6 chars"),
     newpass: z.string().min(6, "Password must be at least 6 chars"),
   }),
+
+  draftEvent: z.object({
+    societyId: z.number().int().positive(),
+    title: z.string().min(3, "Title too short").max(150),
+    description: z.string(),
+    proposedDate: z.string().optional(),
+    proposedLocation: z.string().optional(),
+    parentDraftId: z.number().int().positive().optional()
+  }),
+
 };
 
 /* -----------------------------

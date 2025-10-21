@@ -122,9 +122,15 @@ const assignLead= asyncHandler(async (req,res)=>{
         [societyId,req.user.id]
     )
 
-    if(isPresident.length==0){
+    if(req.user.role=="admin"){
+        // admin can assign anybody lead from society
+    }else{
+        if(isPresident.length==0){
         throw new ApiError(403,"Only president can assign leads")
     }
+    }
+
+    
 
     // verify if user is member of society
     const [rows]= await db.query("select id from society_member where society_id= ? and person_id= ? ", [societyId,userId])

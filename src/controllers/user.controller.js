@@ -93,10 +93,90 @@ const logoutUser= asyncHandler(async (req,res)=>{
 })
 
 const getUser= asyncHandler(async (req,res)=>{
-    const {name,email,password,role}= req.user
-    const profile= {name,email,password,role}
+    const {name,email,role}= req.user
+    const profile= {name,email,role}
+
+    const db=getDB()
+    const[societies]= await db.query(
+        `select s.id as society_id, s.name as society_name, sm.role as society_role
+        from society_member as sm
+        join society s on sm.society_id=s.id
+        where sm.person_id= ?`,
+        [req.user.id]
+    )
+
+    const societyIds = societies.map((s) => s.societyId);
+    const isLead = societies.some((s) => s.societyRole === "lead");
+    const isPresident = societies.some((s) => s.societyRole === "president");
+
+    // pending drafts list
+    let pendingDrafts = [];
+    if (isLead) {
+    const [drafts] = await db.query(
+      `
+      SELECT d.id, d.title, d.status, s.name AS societyName
+      FROM event_draft d
+      JOIN society s ON d.society_id = s.id
+      WHERE d.lead_id = ? AND d.status = 'pending'
+      ORDER BY d.created_at DESC
+      `,
+      [req.user.id]
+    );
+    pendingDrafts = drafts;
+    }
+
+    // pending approval
+    let pendingApprovals = [];
+    if (isPresident && societyIds.length > 0) {
+    const [approvals] = await db.query(
+      `
+      SELECT d.id, d.title, d.status, p.name AS leadName, s.name AS societyName
+      FROM event_draft d
+      JOIN person p ON d.lead_id = p.id
+      JOIN society s ON d.society_id = s.id
+      WHERE d.society_id IN (?) AND d.status = 'pending'
+      ORDER BY d.created_at DESC
+      `,
+      [societyIds]
+    );
+    pendingApprovals = approvals;
+    }
+
+    let upcomingEvents = [];
+    let pastEvents = [];
+    if (societyIds.length > 0) {
+    const [upcoming] = await db.query(
+      `
+      SELECT e.id, e.name, e.date, e.location, s.name AS societyName
+      FROM event e
+      JOIN society s ON e.society_id = s.id
+      WHERE e.society_id IN (?) 
+        AND e.status = 'published'
+        AND e.date >= CURDATE()
+      ORDER BY e.date ASC
+      `,
+      [societyIds]
+    );
+
+    upcomingEvents = upcoming;
+
+    const [past] = await db.query(
+      `
+      SELECT e.id, e.name, e.date, e.location, s.name AS societyName
+      FROM event e
+      JOIN society s ON e.society_id = s.id
+      WHERE e.society_id IN (?) 
+        AND e.status IN ('published', 'completed')
+        AND e.date < CURDATE()
+      ORDER BY e.date DESC
+      `,
+      [societyIds]
+    );
+    pastEvents = past;
+    }
+
     res.status(200).json(
-        new ApiResponse(200,profile,"User fetched succesfully")
+        new ApiResponse(200,{profile,societies,pendingDrafts,pendingApprovals,upcomingEvents,pastEvents},"User fetched succesfully")
     )
 })
 
