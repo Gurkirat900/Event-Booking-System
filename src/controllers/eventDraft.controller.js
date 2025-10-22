@@ -77,6 +77,8 @@ const createEventDraft = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, draft, "Event draft created successfully"));
 });
 
+
+
 const approveOrRejectDraft = asyncHandler(async (req, res) => {
   const draftId  = req.params.id;
   const { action, remarks } = req.body;
@@ -141,6 +143,7 @@ const approveOrRejectDraft = asyncHandler(async (req, res) => {
 
   // If approved, insert or update event table
   if (action === "approved") {
+    let eventID;
     if (draft.event_id) {
       // Update existing event
       await db.query(
@@ -156,6 +159,7 @@ const approveOrRejectDraft = asyncHandler(async (req, res) => {
           draft.event_id,
         ]
       );
+      eventID= draft.eventID;
     } else {
       // Insert new event — default status is 'published'
       const [insertEvent] = await db.query(
@@ -172,14 +176,28 @@ const approveOrRejectDraft = asyncHandler(async (req, res) => {
         ]
       );
 
-      const newEventId = insertEvent.insertId;
+       eventID = insertEvent.insertId;
 
       // Link new event to draft
       await db.query(`UPDATE event_draft SET event_id = ? WHERE id = ?`, [
-        newEventId,
+        eventID,
         draftId,
       ]);
     }
+
+
+    // propagate eventId to all parent drafts in chain
+    await db.query(`
+      with recursive parent_chain as(
+      select id, parent_draft_id from event_draft where id= ?
+      union all
+      select ed.id, ed.parent_draft_id 
+      from event_draft ed
+      join parent_chain pc on ed.id= pc.parent_draft_id)
+      
+      update event_draft set event_id= ?
+      where id in (select id from parent_chain)`,
+    [draftId,eventID])
   }
 
   res
@@ -187,4 +205,164 @@ const approveOrRejectDraft = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, { approval }, `Draft ${action} successfully.`));
 });
 
-export { createEventDraft, approveOrRejectDraft };
+
+
+
+const getPendingDrafts= asyncHandler(async (req,res)=>{
+  const presidentId= req.user.id;
+  const db=getDB()
+
+  // get socities where user id president
+  const[societies]= await db.query("select * from society where president_id= ?",[presidentId])
+  if(societies.length==0){
+    throw new ApiError(403,"You are not president of any society")
+  }
+
+  const societyIds= societies.map((s)=>s.id)
+
+  // fetch drafts belonging to those socities
+  const [drafts]= await db.query(`
+    select d.*, s.name as society_name
+    from event_draft as d
+    join society s on d.society_id= s.id
+    where d.status= 'pending' and d.society_id in (?)`,
+  [societyIds])
+
+  res.status(200).json(
+    new ApiResponse(200,{drafts},"Pending drafts fetched succesfully")
+  )
+
+})
+
+const getDrafts= asyncHandler(async (req,res)=>{
+  const societyId= req.params.societyId;
+  const userId= req.user.id;
+  const db= getDB()
+
+  // check if user is member of curr society
+  const[member]= await db.query("select * from society_member where society_id=? and person_id=? ",
+    [societyId,userId]
+  ) 
+
+  if(member.length==0){
+    throw new ApiError(403,"You are not a member of this society")
+  }
+
+  const[drafts]= await db.query(`
+    select d.*, s.name as society_name, p.name as lead_name
+    from event_draft as d
+    join society as s on d.society_id= s.id
+    join person as p on d.lead_id= p.id
+    where d.society_id= ?`,
+  [societyId])
+
+
+  res.status(200).json(
+    new ApiResponse(200,{drafts},"Drafts for this society fetched successfully")
+  ) 
+
+
+})
+
+
+
+const getDraftInfo= asyncHandler(async (req,res)=>{
+  const draftId= req.params.id;
+  const db= getDB()
+
+  const[draftRows]= await db.query(`
+    select d.*, p.name as drafted_by
+    from event_draft as d
+    join person p on d.lead_id= p.id
+    where d.id= ?`,
+  [draftId])
+
+  if(draftRows.length==0){
+    throw new ApiError(404,"Draft not found")
+  }
+
+  const draft= draftRows[0];
+  const{society_id}= draft;
+
+  const[membership]= await db.query(`select * from society_member where society_id= ? and person_id= ?`,
+    [society_id,req.user.id]
+  )
+
+  if(membership.length==0){
+    throw new ApiError(403,"You are not a member of this society")
+  }
+
+  res.status(200).json(
+    new ApiResponse(200,{draft},"Draft fetched succesfully")
+  )
+})
+
+
+const getDraftHistory= asyncHandler(async (req,res)=>{
+  const draftId= req.params.id;
+  const userid= req.user.id;
+  const db= getDB();
+
+  const[basedraft]= await db.query(`
+    select id, parent_draft_id, event_id, society_id
+    from event_draft where id= ?`,[draftId]
+  )
+
+  if(basedraft.length==0){
+    throw new ApiError(404,"No such Draft found")
+  }
+
+  const {event_id, society_id}= basedraft[0];
+  // check membership
+  const[membership]= await db.query(`select * from society_member where society_id=? and person_id=? `,
+    [society_id,userid]
+  )
+
+  if(membership.length==0){
+    throw new ApiError(403,"You are not member of this society")
+  }
+
+  // fetch drafts
+  let drafts=[]
+
+  if(event_id){     
+    // if draft is of published event
+    [drafts]= await db.query(`
+      select d.*, p.name as Lead_name
+      from event_draft as d
+      join person p on d.lead_id= p.id     
+      where d.event_id= ?
+      order by d.created_at ASC`,
+    [event_id])
+  }else{
+    // if draft is not published event=> we build recursive CTE based on parent_draft_id
+      [drafts]= await db.query(`
+        with recursive draft_chain as(
+        select * from event_draft where  id= ?
+        union all
+        select ed.*
+        from event_draft as ed
+        join draft_chain dc on ed.id= dc.parent_draft_id
+        )
+
+        select dc.* , p.name as lead_name
+        from draft_chain as dc
+        join person p on dc.lead_id= p.id
+        where dc.society_id= ?
+        order by dc.created_at ASC`,
+      [draftId,society_id])
+  }
+
+  const formatedDrafts= drafts.map((draft,index)=>({
+    ...draft,
+    version: index+1,
+    iscurrent: index===drafts.length-1
+  }))
+
+  res.status(200).json(
+    new ApiResponse(200,{formatedDrafts},"Draft version history fetched succesfully")
+  )
+
+})
+
+export { createEventDraft, approveOrRejectDraft, getPendingDrafts, getDrafts, getDraftInfo,getDraftHistory};
