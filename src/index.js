@@ -9,6 +9,7 @@ import societyRoutes from "./routers/societyRouter.js";
 import eventDraftRoutes from "./routers/eventDraftRouter.js"
 import eventRegistrationRoutes from "./routers/eventRegisterRouter.js"
 import eventRoutes from "./routers/eventsRouter.js"
+import eventFeedbackroutes from "./routers/eventFeedbackRouter.js"
 
 const app= express()
 
@@ -28,6 +29,7 @@ app.use("/api/v1/society",societyRoutes);
 app.use("/api/v1/event-draft",eventDraftRoutes);
 app.use("/api/v1/event",eventRoutes)
 app.use("/api/v1/event-register",eventRegistrationRoutes);
+app.use("/api/v1/event-feedback",eventFeedbackroutes);
 
 // app.use(errorHandler);
 

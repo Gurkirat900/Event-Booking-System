@@ -31,10 +31,9 @@ const schemas = {
     userId: z.number().int().positive(),
   }),
 
-  submitReport: z.object({
-    eventId: z.number().int().positive(),
-    rating: z.number().min(1).max(5).optional(),
-    comments: z.string().max(500).optional(),
+  submitFeedback: z.object({
+    rating: z.number().min(1).max(5),
+    comment: z.string().max(500,"comment cannot exceed 500 characters").optional(),
   }),
 
   updateProfile: z.object({
