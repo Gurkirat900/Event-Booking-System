@@ -12,4 +12,5 @@ router.route("/me").get(verifyJWT,getUser)
 router.route("/changePassword").patch(verifyJWT,validateBody("changePass"),changePassword)
 router.route("/updateProfile").patch(verifyJWT,validateBody("updateProfile"),updateProfile)
 
+
 export default router;

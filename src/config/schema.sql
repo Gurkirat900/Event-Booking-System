@@ -1,5 +1,3 @@
-<b>This is schema written in Mysql workBench</b>
-
 create database Event_Booking_System;
 use Event_Booking_System;
 
