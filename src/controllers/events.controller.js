@@ -120,4 +120,70 @@ const getEventInfo= asyncHandler(async (req,res)=>{
 })
 
 
-export {updateEvent,cancelEvent,getEventInfo}
+const markEventComplete= asyncHandler(async (req,res)=>{
+    const eventId= req.params.id;
+    const userId= req.user.id;
+    const db= getDB();
+
+    const {role}= await checkSocietyAccess(db,eventId,userId)
+    if(role!=="president" && role!=="lead"){
+        throw new ApiError(403,"Only society president or lead can mark events as completed")
+    } 
+
+    // Ensure event is published (ongoing)
+    const [eventRows] = await db.query(`SELECT status, date FROM event WHERE id = ?`,  [eventId] );
+    if (eventRows.length === 0) throw new ApiError(404, "Event not found.");
+
+    const event = eventRows[0];
+    if (event.status !== "published") {
+        throw new ApiError(400, "Only published events can be marked as completed.");
+    }
+
+    const [result]= await db.query(`
+        update event set status='completed', updated_at= CURRENT_TIMESTAMP
+        where id=? `,[eventId]
+    )
+
+    if(result.affectedRows==0){
+        throw new ApiError(500,"Event was not marked completed")
+    }
+
+    res.status(200).json(
+        new ApiResponse(200,null,"Event marked as complete")
+    )
+})
+
+const getUpcomingEvents= asyncHandler(async (req,res)=>{
+    const {societyId, search}= req.query;
+    const db= getDB();
+
+    let query = `
+    SELECT e.id, e.name, e.description, e.date, e.location, e.status, s.name AS society_name
+    FROM event e
+    JOIN society s ON e.society_id = s.id
+    WHERE e.status = 'published'
+      AND e.date >= CURDATE()
+    `;
+
+    let values=[];
+
+    if (societyId) {
+        query += " AND e.society_id = ?";
+        values.push(societyId);
+    }
+
+    if (search) {
+        query += " AND e.name LIKE ?";
+        values.push(`%${search}%`);
+    }
+
+    query += " ORDER BY e.date ASC";
+    const[events]= await db.query(query,values);
+
+    res.status(200).json(
+        new ApiResponse(200,events,"Upcoming events fetched successfully")
+    )
+
+})
+
+export {updateEvent,cancelEvent,getEventInfo,markEventComplete,getUpcomingEvents}
