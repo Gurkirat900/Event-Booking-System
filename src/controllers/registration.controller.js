@@ -105,5 +105,22 @@ const getRegistrations= asyncHandler(async (req,res)=>{
     )
 })
 
+const getMyRegisterations= asyncHandler(async (req,res)=>{
+    const userId= req.user.id;
+    const db= getDB()
 
-export {registerEvent,cancelRegistration,getRegistrations}
+    const[getMyRegisterations]= await db.query(`
+        select er.id as registration_id, e.id as event_id, e.name as event_name, e.location, e.date,
+        e.status as event_status, er.status as registration_status, er.registered_at, er.cancelled_at
+        from event_registration as er
+        join event e on er.event_id= e.id
+        where er.person_id= ?
+        order by e.date ASC`,
+    [userId])
+
+    res.status(200).json(
+        new ApiResponse(200,{getMyRegisterations},"My registraions fetched successfully")
+    )
+})
+
+export {registerEvent,cancelRegistration,getRegistrations,getMyRegisterations}
