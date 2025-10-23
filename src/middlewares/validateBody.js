@@ -31,14 +31,6 @@ const schemas = {
     userId: z.number().int().positive(),
   }),
 
-  registerEvent: z.object({
-    eventId: z.number().int().positive(),
-  }),
-
-  unregisterEvent: z.object({
-    eventId: z.number().int().positive(),
-  }),
-
   submitReport: z.object({
     eventId: z.number().int().positive(),
     rating: z.number().min(1).max(5).optional(),

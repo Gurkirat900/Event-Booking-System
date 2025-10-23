@@ -7,6 +7,7 @@ import { errorHandler } from "./middlewares/errorHandler.js"
 import  userRoutes from './routers/userRouter.js';
 import societyRoutes from "./routers/societyRouter.js";
 import eventDraftRoutes from "./routers/eventDraftRouter.js"
+import eventRegistrationRoutes from "./routers/eventRegisterRouter.js"
 
 const app= express()
 
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/users",userRoutes);
 app.use("/api/v1/society",societyRoutes);
 app.use("/api/v1/event-draft",eventDraftRoutes);
+app.use("/api/v1/events",eventRegistrationRoutes);
 
 // app.use(errorHandler);
 

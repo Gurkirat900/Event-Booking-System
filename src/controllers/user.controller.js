@@ -105,9 +105,9 @@ const getUser= asyncHandler(async (req,res)=>{
         [req.user.id]
     )
 
-    const societyIds = societies.map((s) => s.societyId);
-    const isLead = societies.some((s) => s.societyRole === "lead");
-    const isPresident = societies.some((s) => s.societyRole === "president");
+    const societyIds = societies.map((s) => s.society_id);
+    const isLead = societies.some((s) => s.society_role === "lead");
+    const isPresident = societies.some((s) => s.society_role === "president");
 
     // pending drafts list
     let pendingDrafts = [];
