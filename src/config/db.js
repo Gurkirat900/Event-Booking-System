@@ -9,7 +9,7 @@ const dbconnect= async ()=> {                     // connection fn called in ind
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
             password: process.env.DB_PASS,
-            database: 'Event_Booking_System'
+            database: process.env.DB_NAME
         })
         console.log("Connected to MySQL: Success!");
         return db;
