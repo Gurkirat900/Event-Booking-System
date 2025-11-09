@@ -24,6 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // routes
+
 app.use("/api/v1/users",userRoutes);
 app.use("/api/v1/society",societyRoutes);
 app.use("/api/v1/event-draft",eventDraftRoutes);
