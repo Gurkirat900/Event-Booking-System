@@ -13,10 +13,20 @@ import eventFeedbackroutes from "./routers/eventFeedbackRouter.js"
 
 const app= express()
 
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,     // prod frontend
+  "http://localhost:3000",     // teammate’s React dev
+  "http://localhost:5173"      // Vite dev server 
+];
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials:true
-}))
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true
+}));
 
 app.use(express.json())
 app.use(cookieParser())
@@ -24,7 +34,6 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // routes
-
 app.use("/api/v1/users",userRoutes);
 app.use("/api/v1/society",societyRoutes);
 app.use("/api/v1/event-draft",eventDraftRoutes);
