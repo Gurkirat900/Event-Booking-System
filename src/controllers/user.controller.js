@@ -30,6 +30,7 @@ const signupUser= asyncHandler(async(req,res)=>{
     const options= {
         httpOnly: true,
         secure:true,
+        sameSite: "none",
         maxAge: 24 * 60 * 60 * 1000, // 1 day
     }
 
@@ -70,6 +71,7 @@ const loginUser= asyncHandler(async (req,res)=>{
     const options = {
         httpOnly:true,
         secure:true,
+        sameSite: "none",
         maxAge: 24 * 60 * 60 * 1000, // 1 day
     };
 
@@ -84,7 +86,7 @@ const logoutUser= asyncHandler(async (req,res)=>{
     const options = {
         httpOnly:true,
         secure:true,
-        sameSite: "strict"
+        sameSite: "none"
     };
     res.clearCookie("token",options)
     res.status(200).json(
