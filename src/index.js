@@ -25,7 +25,10 @@ app.use(cors({
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error("Not allowed by CORS"));
   },
-  credentials: true
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  exposedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json())
