@@ -135,6 +135,10 @@ const assignLead= asyncHandler(async (req,res)=>{
         throw new ApiError(404,"user not member of this society")
     }
 
+    if(userId==req.user.id){
+        throw new ApiError(400,"You cannnot assign yourself as Lead");
+    }
+
     // remove any existing lead
     await db.query("update society_member set role='member' where society_id=? and role= 'lead' ",
         [societyId]
