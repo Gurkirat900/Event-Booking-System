@@ -91,10 +91,6 @@ const assignPresident= asyncHandler(async (req,res)=>{
         [societyId,userId]
     )
 
-    if(addMember.affectedRows==0){
-        throw new ApiError(500,"president was not added to society as member")
-    }
-
     const[Presidentrow]= await db.query(
         `select p.id, p.name, p.email, sm.role
         from society_member as sm
