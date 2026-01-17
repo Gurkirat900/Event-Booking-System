@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.15.2",
     "nodemon": "^3.1.10",
+    "serverless-http": "^4.0.0",
     "zod": "^4.1.12"
   }
 }
