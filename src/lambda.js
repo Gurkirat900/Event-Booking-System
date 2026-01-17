@@ -15,6 +15,6 @@ const connectDBOnce = async () => {
 export const handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop= false;   // to prevent lambda waiting for open db sockets to close
   await connectDBOnce();
-  return serverless(app)(event, context);     // lambda->handler->serverless->express
+  return await serverless(app)(event, context);     // lambda->handler->serverless->express
 };
 
