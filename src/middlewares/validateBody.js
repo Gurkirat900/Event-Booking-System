@@ -75,10 +75,7 @@ export const validateBody = (schemaName) => {
       return res.status(400).json({
         success: false,
         message: "Invalid input",
-        errors: parseResult.error.errors.map(e => ({
-          field: e.path.join("."),
-          message: e.message
-        }))
+        errors: parseResult.error
       });
     }
 
