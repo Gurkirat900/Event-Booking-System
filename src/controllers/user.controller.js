@@ -8,14 +8,19 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 
 const signupUser= asyncHandler(async(req,res)=>{
 
+  console.log("entered controller");
     const {name,email,password,role="user"}= req.body;
     const db= getDB();
 
+    console.log("getdb() is cslled")
+
     const[existing]= await db.query("select * from person where email= ?",[email]);
+    console.log("entering  first throw ApiError part")
     if(existing.length>0){
         throw new ApiError(400,"User with this email already exits")
     }
 
+    console.log("fisrt db query executed");
     const hashedpass= await bcrypt.hash(password,5);
 
     const[result]= await db.query("insert into person(name,email,password,role) values(?, ?, ?, ?)",

@@ -83,6 +83,7 @@ export const validateBody = (schemaName) => {
     }
 
     req.body = parseResult.data;
+    console.log("leaving validate body.js")
     next();
   };
 };
