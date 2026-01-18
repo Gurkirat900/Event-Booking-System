@@ -14,8 +14,11 @@ const signupUser= asyncHandler(async(req,res)=>{
 
     console.log("getdb() is cslled")
 
+    console.log(process.env.DB_HOST);
     const[existing]= await db.query("select * from person where email= ?",[email]);
+
     console.log("entering  first throw ApiError part")
+
     if(existing.length>0){
         throw new ApiError(400,"User with this email already exits")
     }
