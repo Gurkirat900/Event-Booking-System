@@ -11,6 +11,7 @@ const dbconnect= async ()=> {                     // connection fn called in ind
             user: process.env.DB_USER,
             password: process.env.DB_PASS,
             database: process.env.DB_NAME,
+            
             waitForConnections: true,
             connectionLimit: 3,         // VERY IMPORTANT (Lambda safe)
             queueLimit: 0

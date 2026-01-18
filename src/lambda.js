@@ -1,9 +1,4 @@
-export const handler = async () => {
-  return {
-    statusCode: 200,
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ ok: true })
-  };
-};
+import serverless from "serverless-http";
+import app from "./app.js";
+
+export const handler = serverless(app);
