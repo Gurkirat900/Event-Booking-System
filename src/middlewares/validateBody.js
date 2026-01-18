@@ -68,14 +68,20 @@ export const validateBody = (schemaName) => {
     }
 
     const parseResult = schema.safeParse(req.body);
-    
-    if (parseResult.success==false) {
-      console.log("Zod errors=>",parseResult.error);
-      throw new ApiError(400,"Invalid input")
-      
+
+    if (!parseResult.success) {
+      console.log("Zod validation failed:", parseResult.error.format());
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input",
+        errors: parseResult.error.errors.map(e => ({
+          field: e.path.join("."),
+          message: e.message
+        }))
+      });
     }
 
-    // attach validated data (optional)
     req.body = parseResult.data;
     next();
   };
