@@ -256,7 +256,6 @@ const getDrafts= asyncHandler(async (req,res)=>{
     where d.society_id= ?`,
   [societyId])
 
-
   res.status(200).json(
     new ApiResponse(200,{drafts},"Drafts for this society fetched successfully")
   ) 
@@ -282,6 +281,17 @@ const getDraftInfo= asyncHandler(async (req,res)=>{
   }
 
   const draft= draftRows[0];
+
+  const[approvalRows]= await db.query(`
+    select a.status, a.remarks
+    from approval as a
+    where draft_id=?`,
+    [draftId])
+  
+    let approval;
+    if(approvalRows.length!=0){
+       approval= approvalRows[0];
+    }
   const{society_id}= draft;
 
   const[membership]= await db.query(`select * from society_member where society_id= ? and person_id= ?`,
@@ -293,7 +303,7 @@ const getDraftInfo= asyncHandler(async (req,res)=>{
   }
 
   res.status(200).json(
-    new ApiResponse(200,{draft},"Draft fetched succesfully")
+    new ApiResponse(200,{draft,approval},"Draft fetched succesfully")
   )
 })
 
@@ -364,5 +374,7 @@ const getDraftHistory= asyncHandler(async (req,res)=>{
   )
 
 })
+
+
 
 export { createEventDraft, approveOrRejectDraft, getPendingDrafts, getDrafts, getDraftInfo,getDraftHistory};
